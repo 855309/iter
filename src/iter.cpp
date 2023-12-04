@@ -4,8 +4,12 @@
 #include "color.h"
 #include "log.h"
 
-iterator::iterator(int itr){
+iterator::iterator(int itr, int _type, int _mode, cx _seed, double _ang){
 	this->iterations = itr;
+	this->type = _type;
+	this->mode = _mode;
+	this->seed = _seed;
+	this->ang = _ang;
 }
 
 void iterator::set_itrn(int n){
@@ -15,10 +19,26 @@ void iterator::set_itrn(int n){
 int iterator::iterate(cx cm, int num){
 	cx res = cm;
 	double esc_ords = cpx_fescape(cm);
+
+	cx sd = this->seed;
+	
+	// mdb
+	if(type == 0){
+		sd = cm;
+	}
 	
 	if(cm.orad() > esc_ords) return 0;
 	for(int i = 1; i <= num; i++){
-		res = cpx_func(res);
+		// zoom
+		if(this->mode == 0){
+			res = cpx_func(res, sd);
+		}
+		
+		// apply_ei (rot)
+		if(this->mode == 1){
+			res = cpx_func_r(res, sd, this->ang);
+		}
+		
 		if(res.orad() > esc_ords){
 			return i + 1 - log(log(res.orad()))/log(2);
 			// return i;

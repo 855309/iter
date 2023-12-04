@@ -4,8 +4,7 @@
 #include "cx.h"
 
 double cpx_fescape(cx cm);
-void cpx_init(cx sd);
-void cpx_setv(int n, double val);
-cx cpx_func(cx cm);
+cx cpx_func(cx cm, cx sd);
+cx cpx_func_r(cx cm, cx sd, double ang);
 
 #endif

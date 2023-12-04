@@ -11,14 +11,11 @@
 #include "color.h"
 #include "iter.h"
 
-double zoom_f = 1.05;
 double start_w;
 int width, height;
 cx sd;
 int iters;
 int threads;
-
-vec2 sx, sy;
 
 std::atomic_int thr_running;
 std::string out_path;
@@ -43,9 +40,11 @@ std::string join_path(std::string p1, std::string p2)
 }
 // end
 
-void itr_nsave(int c_sc, int kl){
-	iterator itr(iters);
-	itr.paint(sx, sy, width, height);
+int type = 0;
+int mode = 0;
+void itr_nsave(int c_sc, int kl, vec2 sx_t, vec2 sy_t, double ang){
+	iterator itr(iters, type, mode, sd, ang);
+	itr.paint(sx_t, sy_t, width, height);
 	bitmap_image img = itr.getimg();
 	
 	std::stringstream sstr;
@@ -60,23 +59,62 @@ void itr_nsave(int c_sc, int kl){
 	thr_running--;
 }
 
+vec2 sx, sy;
+
+int stepc = 0;
+double fac_start, fac_end;
+vec2 ctr;
 int main(int argc, char** argv){
-	if(argc == 10){
+	if(argc == 17){
 		loadmap(argv[1]);
 		start_w = std::stoi(argv[2]);
 		
-		sd = cx(std::stod(argv[3]), std::stod(argv[4]));
+		ctr = vec2(std::stod(argv[3]), std::stod(argv[4]));
 		
-		iters = std::stoi(argv[5]);
+		std::string typ_s(argv[5]);
+		if(typ_s == "mdb"){
+			type = 0;
+		}
+		else if(typ_s == "jul"){
+			type = 1;
+		}
+		else{
+			ins_lf(1);
+			clog("Unknown func type.");
+			clnl();
+			return -1;
+		}
 		
-		width = std::stoi(argv[6]);
-		height = std::stoi(argv[7]);
-		out_path = argv[8];
-		threads = std::stoi(argv[9]);
+		sd = cx(std::stod(argv[6]), std::stod(argv[7]));
+		
+		iters = std::stoi(argv[8]);
+		
+		width = std::stoi(argv[9]);
+		height = std::stoi(argv[10]);
+		out_path = argv[11];
+		threads = std::stoi(argv[12]);
+		
+		std::string m_st(argv[13]);
+		if(m_st == "zoom"){
+			mode = 0;
+		}
+		else if(m_st == "apply_ei"){
+			mode = 1;
+		}
+		else{
+			ins_lf(1);
+			clog("Unknown mode.");
+			clnl();
+			return -1;
+		}
+		
+		fac_start = std::stod(argv[14]);
+		fac_end = std::stod(argv[15]);
+		stepc = std::stoi(argv[16]);
 	}
 	else{
 		std::cout << "Usage:" << std::endl;
-		std::cout << argv[0] << " [colormap_file] [start_w] [c.re] [c.im] [iterations] [img_w] [img_h] [out_path] [threads]" << std::endl;
+		std::cout << argv[0] << " [colormap_file] [start_w] [s.re] [s.im] [mdb / jul] [c.re] [c.im] [iterations] [img_w] [img_h] [out_path] [threads] [zoom / apply_ei] [fac_start] [fac_end] [steps (frames)]" << std::endl;
 		return -1;
 	}
 	
@@ -87,22 +125,30 @@ int main(int argc, char** argv){
 	thr_running = 0;
 	
 	sx = vec2(-start_w, start_w);
-	sy = (sx / width) * height;
+	sy = ((sx / width) * height) + ctr.y;
+	sx = sx + ctr.x;
 	
-	cpx_init(sd);
-
-	double s_scl = 1;
+	if(mode == 0){
+		sx = sx * fac_start;
+		sy = sy * fac_start;
+	}
+	else if(mode == 1){
+		fac_start *= M_PI;
+		fac_end *= M_PI;
+	}
 	
-	double f = 0;
-	double maxf = 2 * M_PI;
-	double stepc = 1200;
-	double step = (maxf - f)/stepc;
+	// rot.
+	double step = (fac_end - fac_start) / stepc;
+	
+	
 	int kl = floor(log10(stepc)) + 1;
+	double c_f = 0;
 	
 	for(int i = 0; i < stepc; i++){
-		double c_f = i * step;
-		cpx_setv(0, c_f);
 		int c_sc = i + 1;
+		if(mode == 1){
+			c_f = fac_start + i * step;
+		}
 		
 		bool d_tf = false;
 		while(!d_tf){
@@ -121,16 +167,23 @@ int main(int argc, char** argv){
 		
 		thr_running++;
 		
-		std::thread c_t(itr_nsave, c_sc, kl);
+		std::thread c_t(itr_nsave, c_sc, kl, sx, sy, c_f);
 		c_t.detach();
+		
+		if(mode == 0){
+			vec2 cnt((sx.y + sx.x)/2, (sy.y + sy.x)/2);
+			sx = (sx - cnt.x)/fac_end + cnt.x;
+			sy = (sy - cnt.y)/fac_end + cnt.y;
+		}
 	}
-/*
-					vec2 cnt((sx.y + sx.x)/2, (sy.y + sy.x)/2);
-					sx = (sx - cnt.x)/zoom_f + cnt.x;
-					sy = (sy - cnt.y)/zoom_f + cnt.y;
-					
-					s_scl *= zoom_f;
-*/
+	
+	while(thr_running != 0){
+		// wait
+	}
+	
+	ins_lf(0);
+	clog("Complete.");
+	clnl();
 	
 	return 0;
 }

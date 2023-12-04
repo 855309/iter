@@ -11,11 +11,14 @@ class iterator{
 private:
 	bitmap_image c_img;
 	int iterations;
+	int type, mode;
+	double ang;
+	cx seed;
 	
 	void fillpix(vec2 pos, int et);
 	int iterate(cx cm, int num);
 public:
-	iterator(int itr);
+	iterator(int itr, int _type, int _mode, cx _seed, double _ang);
 	
 	void paint(vec2 sx, vec2 sy, int w, int h);
 	bitmap_image getimg();
