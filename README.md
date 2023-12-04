@@ -3,7 +3,7 @@ Complex iteration renderer.
 
 ```bash
 Usage:
-./iter [colormap_file] [start_w] [c.re] [c.im] [iterations] [img_w] [img_h] [out_path] [threads] [zoom / apply_ei] [fac_start] [fac_end] [steps (frames)]
+./iter [colormap_file] [start_w] [s.re] [s.im] [mdb / jul] [c.re] [c.im] [iterations] [img_w] [img_h] [out_path] [threads] [zoom / apply_ei] [fac_start] [fac_end] [steps (frames)]
 ```
 ## Examples
 
