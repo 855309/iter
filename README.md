@@ -7,7 +7,7 @@ Usage:
 ```
 ## Examples
 
-#### ``f(z) = z^2 + 0.7885*e^iy``
+#### ``f(z) = z^2 + 0.7885*e^iy`` with y from ``[0, 2pi)``
 
 ![img1](img/jl1.gif)
 
